@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shine of Hell</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Sarabun:wght@400;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0008;
+    color: #e8d5f0;
+    font-family: 'Sarabun', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+  }
+
+  #game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Sky / background */
+  #bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, #1a0030 0%, #0a0008 60%);
+  }
+
+  /* Ground */
+  #ground {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(to top, #1a0d00 0%, #2d1500 60%, transparent 100%);
+  }
+
+  /* Moon */
+  #moon {
+    position: absolute;
+    top: 30px;
+    right: 100px;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #fff9e0, #f0d060);
+    box-shadow: 0 0 30px 10px rgba(240,200,80,0.25);
+  }
+
+  /* Stars */
+  .star {
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+    animation: twinkle 2s infinite alternate;
+  }
+  @keyframes twinkle { from { opacity: 0.3; } to { opacity: 1; } }
+
+  /* Trees */
+  .tree {
+    position: absolute;
+    bottom: 70px;
+  }
+  .tree-trunk {
+    width: 10px;
+    height: 30px;
+    background: #2d1500;
+    margin: 0 auto;
+  }
+  .tree-top {
+    width: 0;
+    height: 0;
+    border-left: 22px solid transparent;
+    border-right: 22px solid transparent;
+    border-bottom: 55px solid #0d1f0d;
+    margin: 0 auto;
+  }
+
+  /* Beloved character (tied up) */
+  #beloved {
+    position: absolute;
+    bottom: 70px;
+    left: 40px;
+    width: 60px;
+    height: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #beloved-svg {
+    width: 60px;
+    height: 90px;
+    transition: filter 0.3s;
+  }
+
+  /* Ghost */
+  #ghost {
+    position: absolute;
+    bottom: 72px;
+    width: 70px;
+    height: 90px;
+    transition: none;
+    z-index: 10;
+  }
+
+  #ghost-svg { width: 70px; height: 90px; }
+
+  /* Ghost death animation */
+  #ghost.dying {
+    animation: ghostDie 0.6s forwards;
+  }
+  @keyframes ghostDie {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5) rotate(30deg); opacity: 0.7; filter: brightness(3); }
+    100% { transform: scale(0) rotate(90deg); opacity: 0; }
+  }
+
+  /* HUD */
+  #hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0,0,0,0.5);
+    z-index: 20;
+  }
+
+  #title-text {
+    font-family: 'Creepster', cursive;
+    font-size: 26px;
+    color: #c060ff;
+    text-shadow: 0 0 12px #a020f0;
+    letter-spacing: 2px;
+  }
+
+  #score-display {
+    font-size: 15px;
+    color: #d0a0ff;
+    font-weight: 700;
+  }
+
+  #timer-bar-container {
+    position: absolute;
+    bottom: 78px;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    z-index: 15;
+  }
+
+  #timer-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ff3030, #ff8800);
+    transition: width 0.1s linear;
+    width: 100%;
+  }
+
+  /* Vocab UI */
+  #vocab-ui {
+    position: absolute;
+    bottom: 105px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 20;
+    width: 90%;
+    max-width: 600px;
+  }
+
+  #thai-word {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffdd88;
+    margin-bottom: 12px;
+    text-shadow: 0 0 8px rgba(255,200,0,0.5);
+    min-height: 30px;
+  }
+
+  #choices {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  .choice-btn {
+    flex: 1;
+    max-width: 220px;
+    padding: 14px 10px;
+    background: rgba(80, 0, 120, 0.7);
+    border: 2px solid #8030c0;
+    border-radius: 10px;
+    color: #e8c8ff;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  }
+
+  .choice-btn:hover {
+    background: rgba(120, 0, 180, 0.85);
+    border-color: #c060ff;
+    transform: scale(1.05);
+  }
+
+  .choice-btn.correct {
+    background: rgba(0, 180, 60, 0.7);
+    border-color: #40ff80;
+    color: #c0ffd0;
+    animation: pulse-correct 0.4s;
+  }
+
+  .choice-btn.wrong {
+    background: rgba(200, 0, 0, 0.7);
+    border-color: #ff4040;
+    color: #ffc0c0;
+    animation: shake 0.4s;
+  }
+
+  @keyframes pulse-correct {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  /* Feedback flash */
+  #feedback {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 36px;
+    font-family: 'Creepster', cursive;
+    pointer-events: none;
+    z-index: 30;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  #feedback.show {
+    opacity: 1;
+    animation: floatUp 0.8s forwards;
+  }
+
+  @keyframes floatUp {
+    0% { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
+    70% { transform: translate(-50%, -80%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -110%) scale(1); opacity: 0; }
+  }
+
+  /* Blood bite effect */
+  #bite-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 25;
+    opacity: 0;
+  }
+  #bite-overlay.show {
+    animation: bloodSplash 0.8s forwards;
+  }
+  @keyframes bloodSplash {
+    0% { opacity: 0; background: radial-gradient(ellipse at 15% 70%, rgba(180,0,0,0.7) 0%, transparent 50%); }
+    30% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* Screens */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    background: rgba(5,0,15,0.92);
+    text-align: center;
+    padding: 30px;
+  }
+
+  .screen h1 {
+    font-family: 'Creepster', cursive;
+    font-size: 52px;
+    color: #c060ff;
+    text-shadow: 0 0 20px #a020f0;
+    margin-bottom: 10px;
+  }
+
+  .screen h2 {
+    font-family: 'Creepster', cursive;
+    font-size: 36px;
+    margin-bottom: 16px;
+  }
+
+  .screen p {
+    font-size: 16px;
+    color: #c0a0d8;
+    max-width: 480px;
+    margin-bottom: 10px;
+    line-height: 1.6;
+  }
+
+  .screen-btn {
+    margin-top: 24px;
+    padding: 14px 40px;
+    background: #7000c0;
+    border: 2px solid #c060ff;
+    border-radius: 12px;
+    color: #ffe8ff;
+    font-family: 'Creepster', cursive;
+    font-size: 22px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .screen-btn:hover {
+    background: #a030e0;
+    transform: scale(1.05);
+  }
+
+  #win-screen h2 { color: #60ff90; text-shadow: 0 0 12px #00cc44; }
+  #lose-screen h2 { color: #ff4040; text-shadow: 0 0 12px #cc0000; }
+
+  .hearts {
+    font-size: 26px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 6px;
+  }
+
+  .heart { color: #ff3060; }
+  .heart.lost { color: #400010; }
+
+  #lives-display { display: flex; gap: 4px; align-items: center; }
+
+  /* Particles */
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: particleFly 0.7s forwards;
+    z-index: 15;
+  }
+  @keyframes particleFly {
+    0% { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+  }
+
+  #progress-bar-container {
+    position: absolute;
+    top: 55px;
+    left: 20px;
+    right: 20px;
+    height: 5px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    z-index: 20;
+  }
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #7000c0, #c060ff);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  #progress-label {
+    position: absolute;
+    top: 62px;
+    right: 20px;
+    font-size: 12px;
+    color: #8060a0;
+    z-index: 20;
+  }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+
+  <!-- Background -->
+  <div id="bg"></div>
+  <div id="moon"></div>
+  <div id="ground"></div>
+
+  <!-- Timer bar -->
+  <div id="timer-bar-container"><div id="timer-bar"></div></div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div id="title-text">☠ SHINE OF HELL ☠</div>
+    <div id="score-display">✅ <span id="score">0</span> / 50</div>
+    <div id="lives-display" style="display:none"></div>
+  </div>
+
+  <div id="progress-bar-container"><div id="progress-bar"></div></div>
+  <div id="progress-label">0 / 50 คำ</div>
+
+  <!-- Beloved -->
+  <div id="beloved">
+    <svg id="beloved-svg" viewBox="0 0 60 90" xmlns="http://www.w3.org/2000/svg">
+      <!-- Post -->
+      <rect x="28" y="10" width="4" height="75" fill="#3d1a00" rx="2"/>
+      <!-- Body -->
+      <ellipse cx="30" cy="65" rx="12" ry="16" fill="#c87060"/>
+      <!-- Head -->
+      <circle cx="30" cy="28" r="14" fill="#e8a890"/>
+      <!-- Hair -->
+      <ellipse cx="30" cy="20" rx="15" ry="9" fill="#1a0800"/>
+      <!-- Eyes scared -->
+      <ellipse cx="25" cy="27" rx="3" ry="3.5" fill="#fff"/>
+      <ellipse cx="35" cy="27" rx="3" ry="3.5" fill="#fff"/>
+      <circle cx="25.5" cy="27.5" r="1.5" fill="#2b0000"/>
+      <circle cx="35.5" cy="27.5" r="1.5" fill="#2b0000"/>
+      <!-- Mouth tape -->
+      <rect x="23" y="33" width="14" height="5" rx="2" fill="#8b4513"/>
+      <!-- Ropes -->
+      <line x1="20" y1="55" x2="40" y2="55" stroke="#8b6914" stroke-width="3" stroke-linecap="round"/>
+      <line x1="20" y1="65" x2="40" y2="65" stroke="#8b6914" stroke-width="3" stroke-linecap="round"/>
+      <line x1="20" y1="75" x2="40" y2="75" stroke="#8b6914" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <!-- Ghost -->
+  <div id="ghost">
+    <svg id="ghost-svg" viewBox="0 0 70 90" xmlns="http://www.w3.org/2000/svg">
+      <!-- Body -->
+      <path d="M10 45 Q10 10 35 8 Q60 10 60 45 L60 80 Q52 72 44 80 Q36 72 28 80 Q20 72 12 80 Z" fill="#1a0030" opacity="0.92"/>
+      <!-- Glow -->
+      <path d="M12 45 Q12 14 35 12 Q58 14 58 45 L58 76" fill="none" stroke="#8030e0" stroke-width="1.5" opacity="0.6"/>
+      <!-- Eyes -->
+      <ellipse cx="24" cy="38" rx="7" ry="8" fill="#ff0030"/>
+      <ellipse cx="46" cy="38" rx="7" ry="8" fill="#ff0030"/>
+      <circle cx="24" cy="38" r="3" fill="#000"/>
+      <circle cx="46" cy="38" r="3" fill="#000"/>
+      <!-- Mouth -->
+      <path d="M22 52 Q35 62 48 52" stroke="#ff0030" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Claws -->
+      <line x1="10" y1="55" x2="2" y2="62" stroke="#8030c0" stroke-width="2" stroke-linecap="round"/>
+      <line x1="10" y1="60" x2="1" y2="70" stroke="#8030c0" stroke-width="2" stroke-linecap="round"/>
+      <line x1="60" y1="55" x2="68" y2="62" stroke="#8030c0" stroke-width="2" stroke-linecap="round"/>
+      <line x1="60" y1="60" x2="69" y2="70" stroke="#8030c0" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <!-- Vocab UI -->
+  <div id="vocab-ui">
+    <div id="thai-word">...</div>
+    <div id="choices">
+      <button class="choice-btn" id="btn-a" onclick="answer(0)">...</button>
+      <button class="choice-btn" id="btn-b" onclick="answer(1)">...</button>
+    </div>
+  </div>
+
+  <!-- Effects -->
+  <div id="feedback"></div>
+  <div id="bite-overlay"></div>
+
+  <!-- Start Screen -->
+  <div class="screen" id="start-screen">
+    <h1>☠ SHINE OF HELL ☠</h1>
+    <h2 style="color:#ff8840;font-family:'Creepster',cursive;font-size:28px;">เกมเรียนรู้คำศัพท์ภาษาอังกฤษ</h2>
+    <p>ผีปอบกำลังวิ่งมาทำร้ายคนรักของคุณ!<br>
+    ตอบคำถามคำศัพท์ให้ถูกต้องเพื่อทำลายมัน<br>
+    ก่อนที่ผีจะถึงตัวคนรักใน <strong style="color:#ff6060">10 วินาที</strong><br>
+    ตอบถูกครบ <strong style="color:#c0ff60">50 คำ</strong> เพื่อช่วยคนรักของคุณ!</p>
+    <button class="screen-btn" onclick="startGame()">⚔ เริ่มเกม</button>
+  </div>
+
+  <!-- Win Screen -->
+  <div class="screen" id="win-screen" style="display:none">
+    <h1>☀ SHINE OF HELL ☀</h1>
+    <h2>🎉 คุณช่วยคนรักได้แล้ว!</h2>
+    <p>สุดยอดมาก! คุณตอบถูกครบ 50 คำ<br>และขับไล่ผีปอบทั้งหมดออกไปได้!</p>
+    <p id="win-stats" style="color:#a0f0c0; font-size:18px;"></p>
+    <button class="screen-btn" onclick="restartGame()">🔄 เล่นอีกครั้ง</button>
+  </div>
+
+  <!-- Lose Screen -->
+  <div class="screen" id="lose-screen" style="display:none">
+    <h1 style="color:#ff4040;text-shadow:0 0 20px #cc0000;">☠ SHINE OF HELL ☠</h1>
+    <h2>💔 คนรักถูกกัดคอแล้ว...</h2>
+    <p>ผีปอบเข้าถึงคนรักของคุณ<br>เพราะ <span id="lose-reason" style="color:#ff8080"></span><br>อย่าเสียใจ ลองใหม่อีกครั้ง!</p>
+    <p id="lose-stats" style="color:#d09090; font-size:16px;"></p>
+    <button class="screen-btn" onclick="restartGame()">🔄 ลองใหม่</button>
+  </div>
+
+</div>
+
+<script>
+// ========== VOCABULARY DATA ==========
+const vocab = [
+  {th:"ยอมรับ", correct:"accept", wrong:"except"},
+  {th:"อุบัติเหตุ", correct:"accident", wrong:"incident"},
+  {th:"ช่วยเหลือ", correct:"assist", wrong:"consist"},
+  {th:"เชื่อ / เชื่อถือ", correct:"believe", wrong:"relieve"},
+  {th:"แตก / ทำแตก", correct:"break", wrong:"brake"},
+  {th:"ลมหายใจ", correct:"breath", wrong:"breathe"},
+  {th:"ซื้อ", correct:"buy", wrong:"by"},
+  {th:"เลือก / เก็บ", correct:"choose", wrong:"chose"},
+  {th:"วง / แวดวง", correct:"circle", wrong:"cycle"},
+  {th:"อ้างสิทธิ์", correct:"claim", wrong:"blame"},
+  {th:"ปิด / ใกล้", correct:"close", wrong:"clothes"},
+  {th:"รวบรวม", correct:"collect", wrong:"correct"},
+  {th:"สมบูรณ์", correct:"complete", wrong:"compete"},
+  {th:"ควบคุม", correct:"control", wrong:"central"},
+  {th:"ปิดคลุม", correct:"cover", wrong:"hover"},
+  {th:"สร้าง / ก่อสร้าง", correct:"create", wrong:"crate"},
+  {th:"ตาย", correct:"die", wrong:"dye"},
+  {th:"ยาก", correct:"difficult", wrong:"different"},
+  {th:"ทำ / ทำสำเร็จ", correct:"do", wrong:"due"},
+  {th:"วาด / ดึง", correct:"draw", wrong:"drawer"},
+  {th:"ฝัน", correct:"dream", wrong:"cream"},
+  {th:"ตรวจสอบ", correct:"examine", wrong:"example"},
+  {th:"อธิบาย", correct:"explain", wrong:"complain"},
+  {th:"ล้มเหลว", correct:"fail", wrong:"fall"},
+  {th:"รู้สึก", correct:"feel", wrong:"fill"},
+  {th:"ต่อสู้", correct:"fight", wrong:"flight"},
+  {th:"ค้นหา", correct:"find", wrong:"fine"},
+  {th:"ปฏิบัติตาม", correct:"follow", wrong:"hollow"},
+  {th:"ลืม", correct:"forget", wrong:"regret"},
+  {th:"อนาคต", correct:"future", wrong:"feature"},
+  {th:"ให้", correct:"give", wrong:"live"},
+  {th:"เติบโต", correct:"grow", wrong:"flow"},
+  {th:"ช่วยเหลือ", correct:"help", wrong:"held"},
+  {th:"ซ่อน", correct:"hide", wrong:"hire"},
+  {th:"ยึด / จับ", correct:"hold", wrong:"bold"},
+  {th:"ได้ยิน", correct:"hear", wrong:"here"},
+  {th:"หัวใจ", correct:"heart", wrong:"heard"},
+  {th:"หนัก", correct:"heavy", wrong:"hungry"},
+  {th:"เกาะ / เกาะติด", correct:"island", wrong:"Ireland"},
+  {th:"เข้าร่วม", correct:"join", wrong:"coin"},
+  {th:"รู้จัก", correct:"know", wrong:"now"},
+  {th:"ขาด / ขาดแคลน", correct:"lack", wrong:"lock"},
+  {th:"เรียนรู้", correct:"learn", wrong:"earn"},
+  {th:"ออกจาก", correct:"leave", wrong:"live"},
+  {th:"ปล่อย / ให้อิสระ", correct:"release", wrong:"relax"},
+  {th:"จำ", correct:"remember", wrong:"resemble"},
+  {th:"ช่วยชีวิต / ช่วยเหลือ", correct:"save", wrong:"shave"},
+  {th:"มองเห็น", correct:"see", wrong:"sea"},
+  {th:"ส่ง", correct:"send", wrong:"lend"},
+  {th:"ให้บริการ", correct:"serve", wrong:"curve"},
+  {th:"แสดง", correct:"show", wrong:"shoe"},
+  {th:"นอนหลับ", correct:"sleep", wrong:"sweep"},
+  {th:"พูด", correct:"speak", wrong:"speck"},
+  {th:"ใช้เวลา", correct:"spend", wrong:"blend"},
+  {th:"ยืน", correct:"stand", wrong:"sand"},
+  {th:"เริ่มต้น", correct:"start", wrong:"stare"},
+  {th:"หยุด", correct:"stop", wrong:"step"},
+  {th:"ศึกษา / เรียน", correct:"study", wrong:"steady"},
+  {th:"สอน", correct:"teach", wrong:"reach"},
+  {th:"คิด", correct:"think", wrong:"thing"},
+  {th:"ขว้าง / โยน", correct:"throw", wrong:"through"},
+  {th:"เชื่อถือ", correct:"trust", wrong:"thrust"},
+  {th:"พยายาม", correct:"try", wrong:"dry"},
+  {th:"เข้าใจ", correct:"understand", wrong:"outstanding"},
+  {th:"ใช้", correct:"use", wrong:"us"},
+  {th:"เยี่ยมชม", correct:"visit", wrong:"exist"},
+  {th:"รอ", correct:"wait", wrong:"want"},
+  {th:"ตื่น / ปลุก", correct:"wake", wrong:"walk"},
+  {th:"เดิน", correct:"walk", wrong:"work"},
+  {th:"ต้องการ", correct:"want", wrong:"wont"},
+  {th:"สวมใส่", correct:"wear", wrong:"were"},
+  {th:"ชนะ", correct:"win", wrong:"wine"},
+  {th:"ทำงาน", correct:"work", wrong:"word"},
+  {th:"เขียน", correct:"write", wrong:"ride"},
+];
+
+// ========== GAME STATE ==========
+let score = 0;
+let lives = 1;
+let currentQ = null;
+let questionPool = [];
+let ghostX = 0;
+let ghostStartX = 0;
+let belovedX = 0;
+let timerInterval = null;
+let ghostInterval = null;
+let timeLeft = 10;
+let totalTime = 10;
+let gameActive = false;
+let ghostDying = false;
+let answered = false;
+let correctAnswerIndex = 0;
+
+const ghostEl = document.getElementById('ghost');
+const timerBar = document.getElementById('timer-bar');
+const scoreEl = document.getElementById('score');
+const progressBar = document.getElementById('progress-bar');
+const progressLabel = document.getElementById('progress-label');
+
+function getGameWidth() { return window.innerWidth; }
+function getBelovedRight() { return 100; } // pixel from right edge of beloved
+
+// ========== INIT BACKGROUND ==========
+function initBackground() {
+  const bg = document.getElementById('bg');
+  // Stars
+  for (let i = 0; i < 60; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    star.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*55}%;left:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${1.5+Math.random()*2}s`;
+    document.getElementById('game-container').appendChild(star);
+  }
+  // Trees
+  const positions = [120,200,300,350, getGameWidth()-150, getGameWidth()-220, getGameWidth()-300];
+  positions.forEach(x => {
+    const tree = document.createElement('div');
+    tree.className = 'tree';
+    tree.style.left = x + 'px';
+    const trunk = document.createElement('div');
+    trunk.className = 'tree-trunk';
+    const top = document.createElement('div');
+    top.className = 'tree-top';
+    tree.appendChild(top);
+    tree.appendChild(trunk);
+    document.getElementById('game-container').appendChild(tree);
+  });
+}
+
+// ========== LIVES DISPLAY ==========
+function updateLives() {
+  const container = document.getElementById('lives-display');
+  container.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const h = document.createElement('span');
+    h.style.fontSize = '22px';
+    h.textContent = i < lives ? '❤️' : '🖤';
+    container.appendChild(h);
+  }
+}
+
+// ========== SHUFFLE ==========
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ========== START GAME ==========
+function startGame() {
+  document.getElementById('start-screen').style.display = 'none';
+  score = 0;
+  questionPool = shuffle(vocab).slice(0, 50);
+  updateScore();
+  gameActive = true;
+  nextQuestion();
+}
+
+function updateScore() {
+  scoreEl.textContent = score;
+  const pct = (score / 50) * 100;
+  progressBar.style.width = pct + '%';
+  progressLabel.textContent = `${score} / 50 คำ`;
+}
+
+// ========== NEXT QUESTION ==========
+function nextQuestion() {
+  if (!gameActive) return;
+  if (questionPool.length === 0) { winGame(); return; }
+
+  currentQ = questionPool.pop();
+  answered = false;
+  ghostDying = false;
+
+  // Randomize button positions
+  correctAnswerIndex = Math.random() < 0.5 ? 0 : 1;
+  const wrongWord = currentQ.wrong;
+  const correctWord = currentQ.correct;
+
+  const btnA = document.getElementById('btn-a');
+  const btnB = document.getElementById('btn-b');
+  btnA.className = 'choice-btn';
+  btnB.className = 'choice-btn';
+  btnA.disabled = false;
+  btnB.disabled = false;
+
+  if (correctAnswerIndex === 0) {
+    btnA.textContent = correctWord;
+    btnB.textContent = wrongWord;
+  } else {
+    btnA.textContent = wrongWord;
+    btnB.textContent = correctWord;
+  }
+
+  document.getElementById('thai-word').textContent = `🔤 แปลว่าอะไร? → "${currentQ.th}"`;
+
+  // Reset ghost position
+  const w = getGameWidth();
+  ghostStartX = w + 10;
+  ghostEl.style.right = 'auto';
+  ghostEl.style.left = ghostStartX + 'px';
+  ghostEl.style.display = 'block';
+  ghostEl.classList.remove('dying');
+
+  // Ghost floats: animate to beloved (~100px from left)
+  startGhostMove();
+  startTimer();
+}
+
+// ========== GHOST MOVEMENT ==========
+function startGhostMove() {
+  clearInterval(ghostInterval);
+  const w = getGameWidth();
+  const endX = 110; // x pixel (left) where ghost reaches beloved
+  const duration = totalTime * 1000;
+  const startTime = Date.now();
+  const startPos = w + 10;
+
+  ghostInterval = setInterval(() => {
+    if (!gameActive || ghostDying) return;
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const currentX = startPos - (startPos - endX) * progress;
+    ghostEl.style.left = currentX + 'px';
+
+    // Add floating effect
+    const floatY = Math.sin(Date.now() / 300) * 5;
+    ghostEl.style.bottom = (72 + floatY) + 'px';
+
+    if (progress >= 1) {
+      clearInterval(ghostInterval);
+      if (!answered && gameActive) {
+        ghostReachBeloved();
+      }
+    }
+  }, 16);
+}
+
+// ========== TIMER ==========
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = totalTime;
+  timerBar.style.width = '100%';
+  timerBar.style.background = 'linear-gradient(90deg, #ff3030, #ff8800)';
+
+  const startTime = Date.now();
+  timerInterval = setInterval(() => {
+    if (!gameActive) return;
+    const elapsed = (Date.now() - startTime) / 1000;
+    const remaining = Math.max(0, totalTime - elapsed);
+    const pct = (remaining / totalTime) * 100;
+    timerBar.style.width = pct + '%';
+    if (pct < 30) {
+      timerBar.style.background = '#ff2020';
+    } else if (pct < 60) {
+      timerBar.style.background = 'linear-gradient(90deg, #ff5500, #ffaa00)';
+    }
+  }, 50);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  clearInterval(ghostInterval);
+}
+
+// ========== ANSWER ==========
+function answer(btnIndex) {
+  if (!gameActive || answered || ghostDying) return;
+  answered = true;
+  stopTimer();
+
+  const isCorrect = (btnIndex === correctAnswerIndex);
+  const btnA = document.getElementById('btn-a');
+  const btnB = document.getElementById('btn-b');
+  btnA.disabled = true;
+  btnB.disabled = true;
+
+  if (isCorrect) {
+    (btnIndex === 0 ? btnA : btnB).classList.add('correct');
+    showFeedback('💥 ถูกต้อง!', '#60ff80');
+    killGhost();
+    score++;
+    updateScore();
+    setTimeout(() => {
+      if (score >= 50) { winGame(); return; }
+      nextQuestion();
+    }, 900);
+  } else {
+    (btnIndex === 0 ? btnA : btnB).classList.add('wrong');
+    // Show correct answer
+    (btnIndex === 0 ? btnB : btnA).classList.add('correct');
+    showFeedback('❌ ผิด!', '#ff4040');
+    ghostReachBeloved('ตอบผิด');
+  }
+}
+
+// ========== GHOST DIES ==========
+function killGhost() {
+  ghostDying = true;
+  clearInterval(ghostInterval);
+  ghostEl.classList.add('dying');
+  spawnParticles();
+  setTimeout(() => {
+    ghostEl.style.display = 'none';
+    ghostEl.classList.remove('dying');
+  }, 600);
+}
+
+function spawnParticles() {
+  const rect = ghostEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const colors = ['#c060ff','#ff3090','#8030e0','#ff8030','#ffffff'];
+  for (let i = 0; i < 14; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 6 + Math.random() * 8;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 30 + Math.random() * 60;
+    p.style.cssText = `width:${size}px;height:${size}px;left:${cx}px;top:${cy}px;background:${colors[Math.floor(Math.random()*colors.length)]};--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;`;
+    document.getElementById('game-container').appendChild(p);
+    setTimeout(() => p.remove(), 700);
+  }
+}
+
+// ========== GHOST REACHES BELOVED ==========
+function ghostReachBeloved(reason) {
+  if (!gameActive) return;
+  ghostDying = true;
+  clearInterval(ghostInterval);
+  stopTimer();
+  answered = true;
+
+  // Move ghost to beloved instantly
+  ghostEl.style.left = '85px';
+
+  // Blood splash
+  const overlay = document.getElementById('bite-overlay');
+  overlay.classList.remove('show');
+  void overlay.offsetWidth;
+  overlay.classList.add('show');
+
+  // Shake beloved
+  const belovedSvg = document.getElementById('beloved-svg');
+  belovedSvg.style.filter = 'drop-shadow(0 0 12px red)';
+  setTimeout(() => { belovedSvg.style.filter = ''; }, 600);
+
+  const loseReason = reason || 'หมดเวลา';
+  setTimeout(() => loseGame(loseReason), 800);
+}
+
+// ========== FEEDBACK ==========
+function showFeedback(text, color) {
+  const fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.style.color = color;
+  fb.classList.remove('show');
+  void fb.offsetWidth;
+  fb.classList.add('show');
+  setTimeout(() => fb.classList.remove('show'), 900);
+}
+
+// ========== WIN / LOSE ==========
+function winGame() {
+  gameActive = false;
+  stopTimer();
+  ghostEl.style.display = 'none';
+  document.getElementById('win-stats').textContent = `✨ คุณตอบถูกครบ 50 คำศัพท์ ยอดเยี่ยมมาก!`;
+  document.getElementById('win-screen').style.display = 'flex';
+}
+
+function loseGame(reason) {
+  gameActive = false;
+  stopTimer();
+  document.getElementById('lose-reason').textContent = reason;
+  document.getElementById('lose-stats').textContent = `คุณตอบถูกไปแล้ว ${score} / 50 คำ`;
+  document.getElementById('lose-screen').style.display = 'flex';
+}
+
+function restartGame() {
+  document.getElementById('win-screen').style.display = 'none';
+  document.getElementById('lose-screen').style.display = 'none';
+  ghostEl.style.display = 'none';
+  const btnA = document.getElementById('btn-a');
+  const btnB = document.getElementById('btn-b');
+  btnA.className = 'choice-btn';
+  btnB.className = 'choice-btn';
+  btnA.disabled = false;
+  btnB.disabled = false;
+  startGame();
+}
+
+// ========== KEYBOARD SUPPORT ==========
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft' || e.key === '1' || e.key === 'a' || e.key === 'A') answer(0);
+  if (e.key === 'ArrowRight' || e.key === '2' || e.key === 'd' || e.key === 'D') answer(1);
+});
+
+// ========== INIT ==========
+initBackground();
+</script>
+</body>
+</html>
